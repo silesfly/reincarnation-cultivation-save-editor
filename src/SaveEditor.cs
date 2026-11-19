@@ -14,6 +14,7 @@ namespace ReincarnationCultivationSaveEditor
 {
     public sealed class EditorForm : Form
     {
+        private const string EditorVirtualUrl = "https://lrs.local/editor.html";
         private readonly WebView2 _webView;
         private readonly bool _selfTestMode;
         private readonly string _selfTestOutDir;
@@ -145,21 +146,36 @@ namespace ReincarnationCultivationSaveEditor
             settings.IsStatusBarEnabled = false;
             settings.IsBuiltInErrorPageEnabled = false;
 
+            core.AddWebResourceRequestedFilter("*", CoreWebView2WebResourceContext.All);
+            core.WebResourceRequested += delegate (object s, CoreWebView2WebResourceRequestedEventArgs reqArgs)
+            {
+                if (string.Equals(reqArgs.Request.Uri, EditorVirtualUrl, StringComparison.OrdinalIgnoreCase))
+                {
+                    byte[] htmlBytes = Encoding.UTF8.GetBytes(LoadEmbeddedHtml());
+                    MemoryStream ms = new MemoryStream(htmlBytes, false);
+                    reqArgs.Response = core.Environment.CreateWebResourceResponse(ms, 200, "OK", "Content-Type: text/html; charset=utf-8");
+                }
+                else
+                {
+                    reqArgs.Response = core.Environment.CreateWebResourceResponse(null, 403, "Forbidden", "");
+                }
+            };
             core.NavigationStarting += delegate (object s, CoreWebView2NavigationStartingEventArgs navArgs)
             {
-                string u = navArgs.Uri ?? string.Empty;
-                if (!string.Equals(u, "about:blank", StringComparison.OrdinalIgnoreCase) &&
-                    !u.StartsWith("data:text/html", StringComparison.OrdinalIgnoreCase))
+                if (!string.Equals(navArgs.Uri ?? string.Empty, EditorVirtualUrl, StringComparison.OrdinalIgnoreCase))
                 {
                     navArgs.Cancel = true;
                 }
+            };
+            core.FrameNavigationStarting += delegate (object s, CoreWebView2NavigationStartingEventArgs frameArgs)
+            {
+                frameArgs.Cancel = true;
             };
             core.WebMessageReceived += OnWebMessageReceived;
             core.NavigationCompleted += OnNavigationCompleted;
 
             await core.AddScriptToExecuteOnDocumentCreatedAsync(BuildBridgeScript());
-            string html = LoadEmbeddedHtml();
-            core.NavigateToString(html);
+            core.Navigate(EditorVirtualUrl);
         }
 
         private async void OnNavigationCompleted(object sender, CoreWebView2NavigationCompletedEventArgs e)
@@ -181,6 +197,11 @@ namespace ReincarnationCultivationSaveEditor
             {
                 Application.Exit();
             }
+        }
+
+        public static bool IsTrustedMessageSource(string uri)
+        {
+            return string.Equals(uri ?? string.Empty, EditorVirtualUrl, StringComparison.OrdinalIgnoreCase);
         }
 
         private async Task RunSelfTestAsync()
@@ -209,6 +230,13 @@ namespace ReincarnationCultivationSaveEditor
 
             string rawProbe = await _webView.CoreWebView2.ExecuteScriptAsync(probeJs);
             Dictionary<string, object> probe = ser.Deserialize<Dictionary<string, object>>(rawProbe);
+
+            await _webView.CoreWebView2.ExecuteScriptAsync("try { location.href = 'data:text/html,<h1>blocked</h1>'; } catch(e) {}");
+            await Task.Delay(100);
+            await _webView.CoreWebView2.ExecuteScriptAsync("try { location.href = 'https://example.com/'; } catch(e) {}");
+            await Task.Delay(100);
+            bool navBlocked = IsTrustedMessageSource(_webView.CoreWebView2.Source);
+            bool senderGuardVerified = !IsTrustedMessageSource("about:blank") && !IsTrustedMessageSource("data:text/html,evil") && !IsTrustedMessageSource("https://example.com/") && IsTrustedMessageSource(EditorVirtualUrl);
 
             string roundTripDir = Path.Combine(_selfTestOutDir, "roundtrip-save");
             Directory.CreateDirectory(roundTripDir);
@@ -249,7 +277,9 @@ namespace ReincarnationCultivationSaveEditor
 
             CoreWebView2Settings s = _webView.CoreWebView2.Settings;
             Dictionary<string, object> receipt = new Dictionary<string, object>();
-            receipt["ok"] = Convert.ToBoolean(probe["validDemo"]) && loaded.Count > 0 && restored.Count == loaded.Count;
+            receipt["ok"] = Convert.ToBoolean(probe["validDemo"]) && navBlocked && senderGuardVerified && loaded.Count > 0 && restored.Count == loaded.Count;
+            receipt["navigationBlocked"] = navBlocked;
+            receipt["senderGuardVerified"] = senderGuardVerified;
             receipt["version"] = "1.0.0";
             receipt["webView2Version"] = _webView.CoreWebView2.Environment.BrowserVersionString;
             receipt["badgeText"] = probe["badgeText"];
@@ -292,11 +322,10 @@ namespace ReincarnationCultivationSaveEditor
             Task<string> resolveTask = null;
             try
             {
-                string srcUri = (_webView.CoreWebView2 != null ? (_webView.CoreWebView2.Source ?? string.Empty) : string.Empty);
-                if (!string.Equals(srcUri, "about:blank", StringComparison.OrdinalIgnoreCase) &&
-                    !srcUri.StartsWith("data:text/html", StringComparison.OrdinalIgnoreCase))
+                string msgSource = args.Source ?? string.Empty;
+                if (!IsTrustedMessageSource(msgSource))
                 {
-                    throw new SaveSafetyException("신뢰할 수 없는 문서 출처의 네이티브 요청입니다.");
+                    throw new SaveSafetyException("신뢰할 수 없는 발신 문서(" + msgSource + ")의 네이티브 요청입니다.");
                 }
                 string raw = args.TryGetWebMessageAsString();
                 Dictionary<string, object> msg = ser.Deserialize<Dictionary<string, object>>(raw);
