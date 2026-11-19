@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.pyo
+*.save
+*.sav
+*.bak
+*.log
+receipt.json
+HANDOFF.md
+HANDOFF-AGY.md
+dist/*.exe
+dist/*.zip
+dist/SHA256SUMS.txt
+tests/tmp-*
+tmp-self-test/

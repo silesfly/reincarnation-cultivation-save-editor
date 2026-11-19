@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'none'; font-src 'none'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>윤회수선전 세이브 에디터 v1.0.0</title>
+<style>
+  :root{
+    --bg:#f4f6f9;
+    --surface:#ffffff;
+    --surface-2:#eef2f7;
+    --text:#1b1f26;
+    --muted:#5a6575;
+    --line:#d2d9e4;
+    --accent:#1f6feb;
+    --accent-fg:#ffffff;
+    --danger:#c62828;
+    --ok:#1b7f46;
+    --warn-bg:#fff8e1;
+    --warn-fg:#6b5200;
+    --err-bg:#fdeaea;
+    --err-fg:#7f1d1d;
+    --radius:8px;
+    --shadow:0 1px 3px rgba(0,0,0,.08);
+    color-scheme:light;
+  }
+  :root[data-theme="dark"]{
+    --bg:#13161c;
+    --surface:#1b2029;
+    --surface-2:#232936;
+    --text:#e6ebf2;
+    --muted:#9aa5b5;
+    --line:#313949;
+    --accent:#58a6ff;
+    --accent-fg:#0b1018;
+    --danger:#ef5350;
+    --ok:#4cd98c;
+    --warn-bg:#332b14;
+    --warn-fg:#f0d27a;
+    --err-bg:#3c1a1c;
+    --err-fg:#f7b4b6;
+    --shadow:0 1px 4px rgba(0,0,0,.45);
+    color-scheme:dark;
+  }
+  @media (prefers-color-scheme: dark){
+    :root[data-theme="auto"]{
+      --bg:#13161c;
+      --surface:#1b2029;
+      --surface-2:#232936;
+      --text:#e6ebf2;
+      --muted:#9aa5b5;
+      --line:#313949;
+      --accent:#58a6ff;
+      --accent-fg:#0b1018;
+      --danger:#ef5350;
+      --ok:#4cd98c;
+      --warn-bg:#332b14;
+      --warn-fg:#f0d27a;
+      --err-bg:#3c1a1c;
+      --err-fg:#f7b4b6;
+      --shadow:0 1px 4px rgba(0,0,0,.45);
+      color-scheme:dark;
+    }
+  }
+  *,*::before,*::after{box-sizing:border-box}
+  html,body{margin:0;padding:0;height:100%}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:"맑은 고딕","Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;
+    font-size:14px;
+    line-height:1.5;
+    display:flex;
+    flex-direction:column;
+  }
+  button,input,select,textarea{font:inherit;color:inherit}
+  button{
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:6px 12px;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  button:hover:not(:disabled){border-color:var(--accent)}
+  button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.tab:focus-visible{
+    outline:2px solid var(--accent);
+    outline-offset:2px;
+  }
+  button:disabled{opacity:.5;cursor:not-allowed}
+  button.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent);font-weight:600}
+  button.danger{color:var(--danger);border-color:var(--danger);background:var(--surface)}
+  input[type="text"],input[type="number"],select,textarea{
+    width:100%;
+    min-width:0;
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:6px 9px;
+  }
+  input[type="checkbox"]{width:18px;height:18px;accent-color:var(--accent);cursor:pointer}
+  header.app-header{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:8px;
+    padding:10px 16px;
+    background:var(--surface);
+    border-bottom:1px solid var(--line);
+    box-shadow:var(--shadow);
+    position:sticky;
+    top:0;
+    z-index:40;
+  }
+  header.app-header .title{margin:0;margin-right:auto;font-size:16px;font-weight:700}
+  .badge{
+    display:inline-flex;
+    align-items:center;
+    padding:3px 10px;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:600;
+    border:1px solid var(--line);
+    background:var(--surface-2);
+  }
+  .badge[data-state="connected"]{color:var(--ok);border-color:var(--ok)}
+  .badge[data-state="browser"]{color:var(--accent);border-color:var(--accent)}
+  .badge[data-state="error"]{color:var(--danger);border-color:var(--danger)}
+  #notice-bar{
+    display:none;
+    padding:8px 16px;
+    font-size:13px;
+    background:var(--warn-bg);
+    color:var(--warn-fg);
+    border-bottom:1px solid var(--line);
+  }
+  #notice-bar.show{display:block}
+  #notice-bar.error{background:var(--err-bg);color:var(--err-fg)}
+  nav.tabs{
+    display:flex;
+    gap:2px;
+    padding:0 12px;
+    background:var(--surface);
+    border-bottom:1px solid var(--line);
+    overflow-x:auto;
+  }
+  .tab{
+    border:none;
+    border-radius:0;
+    background:transparent;
+    padding:10px 14px;
+    border-bottom:2px solid transparent;
+    color:var(--muted);
+    font-weight:600;
+  }
+  .tab[aria-selected="true"]{
+    color:var(--accent);
+    border-bottom-color:var(--accent);
+    background:var(--bg);
+  }
+  main{
+    flex:1 1 auto;
+    overflow:auto;
+    padding:16px;
+    max-width:1180px;
+    width:100%;
+    margin:0 auto;
+  }
+  .panel[hidden]{display:none}
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:14px 16px;
+    margin-bottom:14px;
+    box-shadow:var(--shadow);
+  }
+  .card h2{
+    margin:0 0 12px;
+    font-size:15px;
+    color:var(--accent);
+    padding-bottom:6px;
+    border-bottom:1px solid var(--line);
+  }
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(190px,1fr));
+    gap:12px;
+  }
+  .field{display:flex;flex-direction:column;gap:4px}
+  .field label{font-size:12px;font-weight:600;color:var(--muted)}
+  .field-check{flex-direction:row;align-items:center;gap:8px;padding-top:18px}
+  .field-check label{font-size:13px;color:var(--text)}
+  .field-row{display:flex;gap:6px;align-items:center}
+  .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+  .list-box{
+    list-style:none;
+    margin:0;
+    padding:4px;
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    background:var(--surface-2);
+    max-height:240px;
+    overflow:auto;
+  }
+  .list-item{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    padding:7px 10px;
+    border-radius:6px;
+    cursor:pointer;
+  }
+  .list-item:hover{background:var(--surface)}
+  .list-item[data-selected="true"]{background:var(--accent);color:var(--accent-fg)}
+  .list-item .meta{font-size:12px;opacity:.85;white-space:nowrap}
+  .status{margin:8px 0 0;font-size:12px;color:var(--muted)}
+  pre.output{
+    margin:10px 0 0;
+    padding:10px;
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    background:var(--surface-2);
+    font-family:ui-monospace,Consolas,monospace;
+    font-size:12px;
+    white-space:pre-wrap;
+    word-break:break-word;
+    max-height:260px;
+    overflow:auto;
+  }
+  dialog{
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    background:var(--surface);
+    color:var(--text);
+    padding:0;
+    width:min(680px,94vw);
+    max-height:86vh;
+    box-shadow:0 8px 28px rgba(0,0,0,.35);
+  }
+  dialog::backdrop{background:rgba(0,0,0,.5)}
+  .dialog-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:12px 16px;
+    border-bottom:1px solid var(--line);
+  }
+  .dialog-head h2{margin:0;font-size:15px}
+  .dialog-body{padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+  .dialog-foot{
+    display:flex;
+    justify-content:flex-end;
+    gap:8px;
+    padding:12px 16px;
+    border-top:1px solid var(--line);
+  }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <h1 class="title">윤회수선전 세이브 에디터 v1.0.0</h1>
+  <span id="runtime-badge" class="badge" data-state="browser">브라우저 모드</span>
+  <button id="btn-theme" type="button">테마: 자동</button>
+  <button id="btn-load-file" type="button">파일/폴더 열기</button>
+  <input id="file-input" type="file" multiple accept=".json,.bak,application/json" hidden>
+  <button id="btn-sample" type="button">예제 불러오기</button>
+  <button id="btn-load-slot" type="button">저장 폴더 불러오기</button>
+  <button id="btn-save" type="button" class="primary">저장/내려받기</button>
+  <button id="btn-restore" type="button">백업/복원</button>
+</header>
+
+<div id="notice-bar" role="status" aria-live="polite"></div>
+
+<nav class="tabs" role="tablist" aria-label="편집 분류">
+  <button class="tab" id="tab-0" type="button" role="tab" aria-controls="panel-0" aria-selected="true" tabindex="0">전생·세계</button>
+  <button class="tab" id="tab-1" type="button" role="tab" aria-controls="panel-1" aria-selected="false" tabindex="-1">캐릭터·능력</button>
+  <button class="tab" id="tab-2" type="button" role="tab" aria-controls="panel-2" aria-selected="false" tabindex="-1">영근·선천·특전</button>
+  <button class="tab" id="tab-3" type="button" role="tab" aria-controls="panel-3" aria-selected="false" tabindex="-1">가방·장비·법보</button>
+  <button class="tab" id="tab-4" type="button" role="tab" aria-controls="panel-4" aria-selected="false" tabindex="-1">법술·엔딩·업적</button>
+  <button class="tab" id="tab-5" type="button" role="tab" aria-controls="panel-5" aria-selected="false" tabindex="-1">프리셋·검증</button>
+</nav>
+
+<main>
+  <section class="panel" id="panel-0" role="tabpanel" aria-labelledby="tab-0">
+    <div class="card">
+      <h2>전생 및 회차 정보</h2>
+      <div class="grid">
+        <div class="field">
+          <label for="f-reincarnation-stone">환생석</label>
+          <input id="f-reincarnation-stone" type="number" min="0" step="1" value="0">
+        </div>
+        <div class="field">
+          <label for="f-reincarnation-count">전생 횟수</label>
+          <input id="f-reincarnation-count" type="number" min="0" step="1" value="0">
+        </div>
+        <div class="field">
+          <label for="f-clearance-count">클리어 횟수</label>
+          <input id="f-clearance-count" type="number" min="0" step="1" value="0">
+        </div>
+        <div class="field">
+          <label for="f-failure-count">실패 횟수</label>
+          <input id="f-failure-count" type="number" min="0" step="1" value="0">
+        </div>
+        <div class="field">
+          <label for="f-game-mode">게임 난이도</label>
+          <select id="f-game-mode">
+            <option value="0">보통</option>
+            <option value="1">어려움</option>
+          </select>
+        </div>
+        <div class="field field-check">
+          <input id="f-hard-unlocked" type="checkbox">
+          <label for="f-hard-unlocked">어려움 모드 해금</label>
+        </div>
+        <div class="field field-check">
+          <input id="f-skip-battle" type="checkbox">
+          <label for="f-skip-battle">전투 건너뛰기 가능</label>
+        </div>
+        <div class="field field-check">
+          <input id="f-skip-event" type="checkbox">
+          <label for="f-skip-event">사건 건너뛰기 가능</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>진행 연도 및 사건</h2>
+      <div class="grid">
+        <div class="field">
+          <label for="f-current-year">현재 연도</label>
+          <input id="f-current-year" type="number" min="0" step="1" value="16">
+        </div>
+        <div class="field">
+          <label for="f-current-scene">현재 지역</label>
+          <select id="f-current-scene"></select>
+        </div>
+        <div class="field">
+          <label for="f-cultivation-count">수련 횟수</label>
+          <input id="f-cultivation-count" type="number" min="0" step="1" value="0">
+        </div>
+        <div class="field">
+          <label for="f-alchemy-count">연단 횟수</label>
+          <input id="f-alchemy-count" type="number" min="0" step="1" value="0">
+        </div>
+        <div class="field">
+          <label for="f-refine-count">연기 횟수</label>
+          <input id="f-refine-count" type="number" min="0" step="1" value="0">
+        </div>
+        <div class="field">
+          <label for="f-tempering-count">연체 횟수</label>
+          <input id="f-tempering-count" type="number" min="0" step="1" value="0">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-1" role="tabpanel" aria-labelledby="tab-1" hidden>
+    <div class="card">
+      <h2>인물 및 재화</h2>
+      <div class="grid">
+        <div class="field">
+          <label for="f-player-name">이름</label>
+          <input id="f-player-name" type="text" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="field">
+          <label for="f-avatar-name">외형 이름</label>
+          <input id="f-avatar-name" type="text" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="field">
+          <label for="f-realm-level">경지 단계</label>
+          <select id="f-realm-level">
+            <option value="1">1단계</option>
+            <option value="2">2단계</option>
+            <option value="3">3단계</option>
+            <option value="4">4단계</option>
+            <option value="5">5단계</option>
+            <option value="6">6단계</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="f-ling-shi">영석</label>
+          <input id="f-ling-shi" type="number" min="0" step="1" value="0">
+        </div>
+        <div class="field">
+          <label for="f-fate">기연</label>
+          <input id="f-fate" type="number" step="1" value="0">
+        </div>
+        <div class="field">
+          <label for="f-extra-fate">추가 기연</label>
+          <input id="f-extra-fate" type="number" step="1" value="0">
+        </div>
+        <div class="field">
+          <label for="f-likeability-1">임소엽 호감도 (-10~10)</label>
+          <input id="f-likeability-1" type="number" min="-10" max="10" step="1" value="0">
+        </div>
+        <div class="field">
+          <label for="f-likeability-2">조명월 호감도 (-10~10)</label>
+          <input id="f-likeability-2" type="number" min="-10" max="10" step="1" value="0">
+        </div>
+        <div class="field">
+          <label for="f-likeability-3">소유리 호감도 (-10~10)</label>
+          <input id="f-likeability-3" type="number" min="-10" max="10" step="1" value="0">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>생명·영력·전투 능력치</h2>
+      <div class="grid">
+        <div class="field">
+          <label for="f-cur-health">현재 생명력</label>
+          <input id="f-cur-health" type="number" min="0" step="1" value="100">
+        </div>
+        <div class="field">
+          <label for="f-max-health">최대 생명력</label>
+          <input id="f-max-health" type="number" min="1" step="1" value="100">
+        </div>
+        <div class="field">
+          <label for="f-cur-magic">현재 영력</label>
+          <input id="f-cur-magic" type="number" min="0" step="1" value="50">
+        </div>
+        <div class="field">
+          <label for="f-max-magic">최대 영력</label>
+          <input id="f-max-magic" type="number" min="0" step="1" value="50">
+        </div>
+        <div class="field">
+          <label for="f-cur-cultivation">현재 수위</label>
+          <input id="f-cur-cultivation" type="number" min="0" step="1" value="0">
+        </div>
+        <div class="field">
+          <label for="f-max-cultivation">최대 수위</label>
+          <input id="f-max-cultivation" type="number" min="1" step="1" value="100">
+        </div>
+        <div class="field">
+          <label for="f-life-time">남은 수명</label>
+          <input id="f-life-time" type="number" min="0" step="1" value="80">
+        </div>
+        <div class="field">
+          <label for="f-physique">체질</label>
+          <input id="f-physique" type="number" step="1" value="10">
+        </div>
+        <div class="field">
+          <label for="f-comprehension">오성</label>
+          <input id="f-comprehension" type="number" step="1" value="10">
+        </div>
+        <div class="field">
+          <label for="f-attack">공격력</label>
+          <input id="f-attack" type="number" step="1" value="15">
+        </div>
+        <div class="field">
+          <label for="f-speed">속도</label>
+          <input id="f-speed" type="number" step="1" value="10">
+        </div>
+        <div class="field">
+          <label for="f-critical">치명타 확률</label>
+          <input id="f-critical" type="number" step="1" value="5">
+        </div>
+        <div class="field">
+          <label for="f-critical-damage">치명타 배율</label>
+          <input id="f-critical-damage" type="number" step="1" value="150">
+        </div>
+        <div class="field">
+          <label for="f-alchemy-level">연단 등급 (1~5)</label>
+          <input id="f-alchemy-level" type="number" min="1" max="5" step="1" value="1">
+        </div>
+        <div class="field">
+          <label for="f-alchemy-exp">연단 경험치</label>
+          <input id="f-alchemy-exp" type="number" min="0" step="1" value="0">
+        </div>
+        <div class="field">
+          <label for="f-refine-level">연기 등급 (1~5)</label>
+          <input id="f-refine-level" type="number" min="1" max="5" step="1" value="1">
+        </div>
+        <div class="field">
+          <label for="f-refine-exp">연기 경험치</label>
+          <input id="f-refine-exp" type="number" min="0" step="1" value="0">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-2" role="tabpanel" aria-labelledby="tab-2" hidden>
+    <div class="card">
+      <h2>캐릭터 영근 수치 (0~100)</h2>
+      <div class="grid">
+        <div class="field"><label for="f-lg-gold">금 영근</label><input id="f-lg-gold" type="number" min="0" max="100" step="1" value="0"></div>
+        <div class="field"><label for="f-lg-wood">목 영근</label><input id="f-lg-wood" type="number" min="0" max="100" step="1" value="0"></div>
+        <div class="field"><label for="f-lg-water">수 영근</label><input id="f-lg-water" type="number" min="0" max="100" step="1" value="0"></div>
+        <div class="field"><label for="f-lg-fire">화 영근</label><input id="f-lg-fire" type="number" min="0" max="100" step="1" value="0"></div>
+        <div class="field"><label for="f-lg-earth">토 영근</label><input id="f-lg-earth" type="number" min="0" max="100" step="1" value="0"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>영근 기반 및 추가 수치</h2>
+      <div class="grid">
+        <div class="field"><label for="f-lg-basic-gold">기본 금</label><input id="f-lg-basic-gold" type="number" min="0" step="1" value="0"></div>
+        <div class="field"><label for="f-lg-basic-wood">기본 목</label><input id="f-lg-basic-wood" type="number" min="0" step="1" value="0"></div>
+        <div class="field"><label for="f-lg-basic-water">기본 수</label><input id="f-lg-basic-water" type="number" min="0" step="1" value="0"></div>
+        <div class="field"><label for="f-lg-basic-fire">기본 화</label><input id="f-lg-basic-fire" type="number" min="0" step="1" value="0"></div>
+        <div class="field"><label for="f-lg-basic-earth">기본 토</label><input id="f-lg-basic-earth" type="number" min="0" step="1" value="0"></div>
+        <div class="field"><label for="f-lg-extra-gold">추가 금</label><input id="f-lg-extra-gold" type="number" min="0" step="1" value="0"></div>
+        <div class="field"><label for="f-lg-extra-wood">추가 목</label><input id="f-lg-extra-wood" type="number" min="0" step="1" value="0"></div>
+        <div class="field"><label for="f-lg-extra-water">추가 수</label><input id="f-lg-extra-water" type="number" min="0" step="1" value="0"></div>
+        <div class="field"><label for="f-lg-extra-fire">추가 화</label><input id="f-lg-extra-fire" type="number" min="0" step="1" value="0"></div>
+        <div class="field"><label for="f-lg-extra-earth">추가 토</label><input id="f-lg-extra-earth" type="number" min="0" step="1" value="0"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>선천 자질</h2>
+      <ul id="bs-talent-list" class="list-box" aria-label="선천 자질 목록"></ul>
+      <div class="row">
+        <button id="btn-bs-add" type="button" class="catalog-open" data-catalog-filter="birth" data-catalog-target="bs">선천 추가</button>
+        <button id="btn-bs-remove" type="button" class="danger">선택 삭제</button>
+        <button id="btn-bs-clear" type="button">전체 비우기</button>
+      </div>
+      <p id="bs-talent-status" class="status">등록된 선천 자질이 없습니다.</p>
+    </div>
+
+    <div class="card">
+      <h2>윤회 특전</h2>
+      <ul id="md-talent-list" class="list-box" aria-label="윤회 특전 목록"></ul>
+      <div class="row">
+        <button id="btn-md-add" type="button" class="catalog-open" data-catalog-filter="talent" data-catalog-target="md">특전 추가</button>
+        <button id="btn-md-level-up" type="button">단계 +1</button>
+        <button id="btn-md-level-down" type="button">단계 -1</button>
+        <button id="btn-md-remove" type="button" class="danger">선택 삭제</button>
+        <button id="btn-md-clear" type="button">전체 비우기</button>
+      </div>
+      <p id="md-talent-status" class="status">등록된 특전이 없습니다.</p>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-3" role="tabpanel" aria-labelledby="tab-3" hidden>
+    <div class="card">
+      <h2>장비 슬롯</h2>
+      <div class="grid">
+        <div class="field">
+          <label for="f-equip-weapon">무기</label>
+          <div class="field-row">
+            <input id="f-equip-weapon" type="text" readonly value="없음">
+            <button type="button" class="catalog-open" data-catalog-filter="equip" data-catalog-target="equip:Weapon">선택</button>
+            <button type="button" id="btn-clear-weapon">해제</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="f-equip-clothes">의복</label>
+          <div class="field-row">
+            <input id="f-equip-clothes" type="text" readonly value="없음">
+            <button type="button" class="catalog-open" data-catalog-filter="equip" data-catalog-target="equip:Clothes">선택</button>
+            <button type="button" id="btn-clear-clothes">해제</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="f-equip-shoes">신발</label>
+          <div class="field-row">
+            <input id="f-equip-shoes" type="text" readonly value="없음">
+            <button type="button" class="catalog-open" data-catalog-filter="equip" data-catalog-target="equip:Shoes">선택</button>
+            <button type="button" id="btn-clear-shoes">해제</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>장착 법보</h2>
+      <div class="grid" style="margin-bottom:10px">
+        <div class="field">
+          <label for="f-fabao-slots">개방된 법보 슬롯 수</label>
+          <input id="f-fabao-slots" type="number" min="0" step="1" value="1">
+        </div>
+      </div>
+      <ul id="fabao-list" class="list-box" aria-label="장착 법보 목록"></ul>
+      <div class="row">
+        <button id="btn-fabao-add" type="button" class="catalog-open" data-catalog-filter="fabao" data-catalog-target="fabao">법보 추가</button>
+        <button id="btn-fabao-remove" type="button" class="danger">선택 삭제</button>
+        <button id="btn-fabao-clear" type="button">전체 비우기</button>
+      </div>
+      <p id="fabao-status" class="status">장착된 법보가 없습니다.</p>
+    </div>
+
+    <div class="card">
+      <h2>가방 아이템</h2>
+      <ul id="inventory-list" class="list-box" aria-label="가방 아이템 목록"></ul>
+      <div class="row">
+        <button id="btn-inventory-add" type="button" class="catalog-open" data-catalog-filter="item" data-catalog-target="bag">아이템 추가</button>
+        <button id="btn-inventory-inc" type="button">수량 +1</button>
+        <button id="btn-inventory-dec" type="button">수량 -1</button>
+        <button id="btn-inventory-remove" type="button" class="danger">선택 삭제</button>
+        <button id="btn-inventory-sort" type="button">정렬</button>
+        <button id="btn-inventory-clear" type="button">전체 비우기</button>
+      </div>
+      <p id="inventory-status" class="status">가방이 비어 있습니다.</p>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-4" role="tabpanel" aria-labelledby="tab-4" hidden>
+    <div class="card">
+      <h2>보유 법술</h2>
+      <ul id="skill-list" class="list-box" aria-label="보유 법술 목록"></ul>
+      <div class="row">
+        <button id="btn-skill-add" type="button" class="catalog-open" data-catalog-filter="skill" data-catalog-target="skill">법술 추가</button>
+        <button id="btn-skill-remove" type="button" class="danger">선택 삭제</button>
+        <button id="btn-skill-clear" type="button">전체 비우기</button>
+      </div>
+      <p id="skill-status" class="status">보유한 법술이 없습니다.</p>
+    </div>
+
+    <div class="card">
+      <h2>해금된 엔딩</h2>
+      <ul id="ending-list" class="list-box" aria-label="엔딩 목록"></ul>
+      <div class="row">
+        <button id="btn-ending-add" type="button" class="catalog-open" data-catalog-filter="ending" data-catalog-target="ending">엔딩 추가</button>
+        <button id="btn-ending-unlock-all" type="button">전체 해금</button>
+        <button id="btn-ending-remove" type="button" class="danger">선택 삭제</button>
+        <button id="btn-ending-clear" type="button">전체 비우기</button>
+      </div>
+      <p id="ending-status" class="status">해금된 엔딩이 없습니다.</p>
+    </div>
+
+    <div class="card">
+      <h2>업적</h2>
+      <ul id="achievement-list" class="list-box" aria-label="업적 목록"></ul>
+      <div class="row">
+        <button id="btn-achievement-add" type="button" class="catalog-open" data-catalog-filter="achievement" data-catalog-target="achievement">업적 추가</button>
+        <button id="btn-achievement-unlock-all" type="button">전체 해금</button>
+        <button id="btn-achievement-remove" type="button" class="danger">선택 삭제</button>
+        <button id="btn-achievement-clear" type="button">전체 비우기</button>
+      </div>
+      <p id="achievement-status" class="status">활성화된 업적이 없습니다.</p>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-5" role="tabpanel" aria-labelledby="tab-5" hidden>
+    <div class="card">
+      <h2>프리셋</h2>
+      <div class="grid">
+        <div class="field">
+          <label for="preset-select">프리셋 선택</label>
+          <select id="preset-select"></select>
+        </div>
+      </div>
+      <div class="row">
+        <button id="btn-preset-apply" type="button" class="primary">프리셋 적용</button>
+      </div>
+      <p id="preset-status" class="status">적용할 프리셋을 고르세요.</p>
+    </div>
+
+    <div class="card">
+      <h2>세이브 검증 및 내보내기</h2>
+      <div class="row">
+        <button id="btn-validate" type="button" class="primary">검증 실행</button>
+        <button id="btn-validate-clear" type="button">결과 지우기</button>
+        <button id="btn-export-json" type="button">JSON 미리보기</button>
+      </div>
+      <pre id="validate-output" class="output" aria-live="polite" tabindex="0">검증 결과가 여기에 표시됩니다.</pre>
+    </div>
+  </section>
+</main>
+
+<dialog id="catalog-dialog" aria-labelledby="catalog-title">
+  <div class="dialog-head">
+    <h2 id="catalog-title">카탈로그 선택</h2>
+    <button id="btn-catalog-close" type="button">닫기</button>
+  </div>
+  <div class="dialog-body">
+    <div class="row" style="margin-top:0">
+      <div class="field" style="flex:1 1 240px">
+        <label for="catalog-search">이름·설명·번호 검색</label>
+        <input id="catalog-search" type="text" placeholder="검색어를 입력하세요" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="field" style="flex:0 0 150px">
+        <label for="catalog-filter">분류</label>
+        <select id="catalog-filter">
+          <option value="all">전체</option>
+          <option value="item">아이템</option>
+          <option value="equip">장비</option>
+          <option value="fabao">법보</option>
+          <option value="skill">법술</option>
+          <option value="birth">선천</option>
+          <option value="talent">특전</option>
+          <option value="ending">엔딩</option>
+          <option value="achievement">업적</option>
+        </select>
+      </div>
+    </div>
+    <ul id="catalog-results" class="list-box" aria-label="카탈로그 검색 결과" style="max-height:320px"></ul>
+    <p id="catalog-status" class="status">항목을 선택하세요.</p>
+  </div>
+  <div class="dialog-foot">
+    <button id="btn-catalog-add" type="button" class="primary">선택 항목 추가</button>
+  </div>
+</dialog>
+
+<dialog id="backup-dialog" aria-labelledby="backup-title">
+  <div class="dialog-head">
+    <h2 id="backup-title">백업 및 복원</h2>
+    <button id="btn-backup-close" type="button">닫기</button>
+  </div>
+  <div class="dialog-body">
+    <ul id="backup-list" class="list-box" aria-label="백업 목록" style="max-height:300px"></ul>
+    <p id="backup-status" class="status">표시할 백업이 없습니다.</p>
+  </div>
+  <div class="dialog-foot">
+    <button id="btn-backup-create" type="button">현재 상태 백업</button>
+    <button id="btn-backup-restore" type="button" class="primary">선택 백업 복원</button>
+  </div>
+</dialog>
+
+<script src="./catalog-data.js"></script>
+<script src="./lrs-codec.js"></script>
+<script src="./editor-core.js"></script>
+<script src="./editor-ui.js"></script>
+</body>
+</html>
