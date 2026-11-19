@@ -132,13 +132,14 @@ def is_game_running() -> bool:
             for p in Path("/proc").iterdir():
                 if not p.name.isdigit():
                     continue
-                comm = p / "comm"
-                try:
-                    name = comm.read_text(encoding="utf-8", errors="ignore").strip().lower()
-                except OSError:
-                    continue
-                if any(kw in name for kw in PROCESS_KEYWORDS):
-                    return True
+                for sub in ("comm", "cmdline"):
+                    target_f = p / sub
+                    try:
+                        text = target_f.read_bytes().replace(b"\x00", b" ").decode("utf-8", errors="ignore").strip().lower()
+                    except OSError:
+                        continue
+                    if any(kw in text for kw in PROCESS_KEYWORDS):
+                        return True
     except OSError:
         return False
     return False

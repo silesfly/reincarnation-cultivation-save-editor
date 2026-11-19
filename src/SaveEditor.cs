@@ -145,6 +145,15 @@ namespace ReincarnationCultivationSaveEditor
             settings.IsStatusBarEnabled = false;
             settings.IsBuiltInErrorPageEnabled = false;
 
+            core.NavigationStarting += delegate (object s, CoreWebView2NavigationStartingEventArgs navArgs)
+            {
+                string u = navArgs.Uri ?? string.Empty;
+                if (!string.Equals(u, "about:blank", StringComparison.OrdinalIgnoreCase) &&
+                    !u.StartsWith("data:text/html", StringComparison.OrdinalIgnoreCase))
+                {
+                    navArgs.Cancel = true;
+                }
+            };
             core.WebMessageReceived += OnWebMessageReceived;
             core.NavigationCompleted += OnNavigationCompleted;
 
@@ -283,6 +292,12 @@ namespace ReincarnationCultivationSaveEditor
             Task<string> resolveTask = null;
             try
             {
+                string srcUri = (_webView.CoreWebView2 != null ? (_webView.CoreWebView2.Source ?? string.Empty) : string.Empty);
+                if (!string.Equals(srcUri, "about:blank", StringComparison.OrdinalIgnoreCase) &&
+                    !srcUri.StartsWith("data:text/html", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new SaveSafetyException("신뢰할 수 없는 문서 출처의 네이티브 요청입니다.");
+                }
                 string raw = args.TryGetWebMessageAsString();
                 Dictionary<string, object> msg = ser.Deserialize<Dictionary<string, object>>(raw);
                 id = Convert.ToInt32(msg["id"]);
