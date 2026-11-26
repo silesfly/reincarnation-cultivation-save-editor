@@ -740,8 +740,10 @@
       if (misc) {
         if (hasOwn(misc, 'realmLevel')) {
           var rl = toInt(misc.realmLevel, 0);
-          if (rl < 1 || rl > 6) {
-            errors.push('경지(realmLevel)는 1~6 범위여야 합니다: ' + rl);
+          if (rl < 0) {
+            errors.push('경지(realmLevel)는 0 이상이어야 합니다: ' + rl);
+          } else if (rl < 1 || rl > 6) {
+            warnings.push('경지(realmLevel)가 기본 범위(1~6) 밖입니다: ' + rl);
           }
         }
         if (hasOwn(misc, 'lingShi') && toInt(misc.lingShi, 0) < 0) {
@@ -752,7 +754,7 @@
           if (hasOwn(misc, lk)) {
             var lv = toInt(misc[lk], 0);
             if (lv < -10 || lv > 10) {
-              errors.push('호감도(' + lk + ')는 -10~10 범위여야 합니다: ' + lv);
+              warnings.push('호감도(' + lk + ')가 기본 범위(-10~10) 밖입니다: ' + lv);
             }
           }
         }
@@ -760,15 +762,19 @@
       var al = isObj(np.alchemyInfo) ? np.alchemyInfo : null;
       if (al && hasOwn(al, 'alchemyLevel')) {
         var alv = toInt(al.alchemyLevel, 0);
-        if (alv < 1 || alv > 5) {
-          errors.push('연단 등급(alchemyLevel)은 1~5 범위여야 합니다: ' + alv);
+        if (alv < 0) {
+          errors.push('연단 등급(alchemyLevel)은 0 이상이어야 합니다: ' + alv);
+        } else if (alv < 1 || alv > 5) {
+          warnings.push('연단 등급(alchemyLevel)이 기본 범위(1~5) 밖입니다: ' + alv);
         }
       }
       var rf = isObj(np.refineInfo) ? np.refineInfo : null;
       if (rf && hasOwn(rf, 'refineLevel')) {
         var rfv = toInt(rf.refineLevel, 0);
-        if (rfv < 1 || rfv > 5) {
-          errors.push('연기 등급(refineLevel)은 1~5 범위여야 합니다: ' + rfv);
+        if (rfv < 0) {
+          errors.push('연기 등급(refineLevel)은 0 이상이어야 합니다: ' + rfv);
+        } else if (rfv < 1 || rfv > 5) {
+          warnings.push('연기 등급(refineLevel)이 기본 범위(1~5) 밖입니다: ' + rfv);
         }
       }
       var lgInfo = isObj(np.lingGenInfo) ? np.lingGenInfo : null;
@@ -778,8 +784,10 @@
           var key = elKeys[lgi];
           if (hasOwn(lgInfo, key)) {
             var val = toInt(lgInfo[key], 0);
-            if (val < 0 || val > 100) {
-              errors.push('영근(' + key + ') 수치는 0~100 범위여야 합니다: ' + val);
+            if (val < 0) {
+              errors.push('영근(' + key + ') 수치는 0 이상이어야 합니다: ' + val);
+            } else if (val > 100) {
+              warnings.push('영근(' + key + ') 수치가 기본 범위(0~100)를 초과했습니다: ' + val);
             }
           }
         }
@@ -793,18 +801,27 @@
       } else {
         for (var bi = 0; bi < bag.Bags.length; bi++) {
           var be = bag.Bags[bi];
-          if (!isObj(be) || !isObj(be.item)) {
-            errors.push('가방 ' + (bi + 1) + '번 슬롯에 아이템 객체가 없습니다.');
+          if (!isObj(be)) {
+            errors.push('가방 ' + (bi + 1) + '번 슬롯이 객체가 아닙니다.');
+            continue;
+          }
+          if (!isObj(be.item)) {
+            warnings.push('가방 ' + (bi + 1) + '번 슬롯에 아이템 객체가 비어 있습니다.');
             continue;
           }
           var bid = readEntryId(be.item);
           if (bid <= 0) {
-            errors.push('가방 ' + (bi + 1) + '번 아이템 ID가 올바르지 않습니다.');
+            warnings.push('가방 ' + (bi + 1) + '번 아이템 ID가 비정상입니다: ' + bid);
           } else if (idx && !idx.getItem(bid)) {
             warnings.push('가방 ' + (bi + 1) + '번 아이템 ID ' + bid + '는 카탈로그에 없습니다.');
           }
-          if (hasOwn(be, 'num') && toInt(be.num, 0) < 1) {
-            errors.push('가방 ' + (bi + 1) + '번 아이템 수량은 1 이상이어야 합니다.');
+          if (hasOwn(be, 'num')) {
+            var bnum = toInt(be.num, 0);
+            if (bnum < 0) {
+              errors.push('가방 ' + (bi + 1) + '번 아이템 수량은 0 이상이어야 합니다.');
+            } else if (bnum < 1) {
+              warnings.push('가방 ' + (bi + 1) + '번 아이템 수량이 0입니다.');
+            }
           }
         }
       }
@@ -919,7 +936,7 @@
             var cost = pickProp(tcat, 'Cost', 'cost', []);
             var maxLv = toInt(pickProp(tcat, 'MaxLevel', 'maxLevel', isArr(cost) ? cost.length : 0), 0);
             if (maxLv > 0 && tlv > maxLv) {
-              errors.push('특전 ID ' + tid + '의 레벨(' + tlv + ')이 최대 레벨(' + maxLv + ')을 초과했습니다.');
+              warnings.push('특전 ID ' + tid + '의 레벨(' + tlv + ')이 기본 최대 레벨(' + maxLv + ')을 초과했습니다.');
             }
           } else if (idx) {
             warnings.push('특전 ID ' + tid + '는 카탈로그에 없습니다.');

@@ -1,16 +1,16 @@
-# 윤회수선전 세이브 에디터 (v1.0.0)
+# 윤회수선전 세이브 에디터 (v1.0.1)
 
 《윤회수선전(Re-xiuxian Legend)》용 100% 오프라인·무의존 세이브 에디터입니다.
 
 ## 제공 형태 (3-Surface)
 
-1. **Surface A — 단일 오프라인 HTML (`dist/ReincarnationCultivationSaveEditor-v1.0.0.html`)**
+1. **Surface A — 단일 오프라인 HTML (`dist/ReincarnationCultivationSaveEditor-v1.0.1.html`)**
    - 외부 네트워크 연결(`connect-src 'none'`), 외부 스크립트, 한자/가나 노출이 없는 순수 한국어 단일 파일입니다.
    - `GameData` 폴더 내 JSON 묶음 또는 단일 `.json` 파일을 열어 편집한 뒤 내려받을 수 있습니다.
 2. **Surface B — Python 3 표준 라이브러리 CLI & 로컬 서버 (`lrs_editor.py`)**
    - `inspect`, `validate`, `presets`, `edit`, `serve`, `--self-test` 명령을 지원합니다.
    - 루프백(`127.0.0.1`) 서버는 `Host`, `Origin`/`Sec-Fetch-Site`, 랜덤 `X-Lrs-Token` 헤더를 검증합니다.
-3. **Surface C — Windows 독립 실행 파일 (`ReincarnationCultivationSaveEditor-v1.0.0.exe`)**
+3. **Surface C — Windows 독립 실행 파일 (`ReincarnationCultivationSaveEditor-v1.0.1.exe`)**
    - `.NET Framework 4.8` WinForms + `Microsoft.Web.WebView2` 기반 단일 실행 파일로 로컬 저장 폴더에 직접 연결됩니다.
    - 배포 시 같은 폴더에 `Microsoft.Web.WebView2.Core.dll`, `Microsoft.Web.WebView2.WinForms.dll`, `WebView2Loader.dll`을 함께 두세요.
 
@@ -36,8 +36,8 @@
 ## 사용 방법
 
 ### Windows 독립 실행기
-1. 릴리스 압축(`ReincarnationCultivationSaveEditor-v1.0.0-Windows.zip`)을 원하는 폴더에 풉니다.
-2. 게임을 완전히 종료한 뒤 `ReincarnationCultivationSaveEditor-v1.0.0.exe`를 실행합니다.
+1. 릴리스 압축(`ReincarnationCultivationSaveEditor-v1.0.1-Windows.zip`)을 원하는 폴더에 풉니다.
+2. 게임을 완전히 종료한 뒤 `ReincarnationCultivationSaveEditor-v1.0.1.exe`를 실행합니다.
 3. 기본 경로가 자동 감지되지 않으면 `저장 폴더 불러오기` 또는 `파일/폴더 열기`로 `GameData` 폴더나 개별 `.json` 파일을 여세요.
 4. 수정 후 `저장/내려받기`를 누르면 `.lrs_backups` 아래에 SHA-256 검증 백업(최대 20개)을 자동 생성한 뒤 원자적으로 저장합니다.
 

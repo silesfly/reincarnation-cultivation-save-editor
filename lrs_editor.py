@@ -27,7 +27,7 @@ from pathlib import Path
 from typing import Any
 
 ROOT_DIR = Path(__file__).resolve().parent
-HTML_DIST_PATH = ROOT_DIR / "dist" / "ReincarnationCultivationSaveEditor-v1.0.0.html"
+HTML_DIST_PATH = ROOT_DIR / "dist" / "ReincarnationCultivationSaveEditor-v1.0.1.html"
 CATALOG_JS_PATH = ROOT_DIR / "src" / "catalog-data.js"
 
 KNOWN_SAVE_FILES = [
@@ -534,24 +534,40 @@ def validate_files(files_obj: dict[str, dict[str, Any]], catalog: dict[str, Any]
     if isinstance(np, dict):
         misc = np.get("miscInfo")
         if isinstance(misc, dict):
-            if "realmLevel" in misc and not (1 <= _to_int(misc["realmLevel"], 0) <= 6):
-                errors.append(f"경지(realmLevel)는 1~6 범위여야 합니다: {misc['realmLevel']}")
+            if "realmLevel" in misc:
+                rl = _to_int(misc["realmLevel"], 0)
+                if rl < 0:
+                    errors.append(f"경지(realmLevel)는 0 이상이어야 합니다: {rl}")
+                elif not (1 <= rl <= 6):
+                    warnings.append(f"경지(realmLevel)가 기본 범위(1~6) 밖입니다: {rl}")
             if "lingShi" in misc and _to_int(misc["lingShi"], 0) < 0:
                 errors.append("영석(lingShi)은 0 이상이어야 합니다.")
             for li in ("likeability1", "likeability2", "likeability3"):
                 if li in misc and not (-10 <= _to_int(misc[li], 0) <= 10):
-                    errors.append(f"호감도({li})는 -10~10 범위여야 합니다: {misc[li]}")
+                    warnings.append(f"호감도({li})가 기본 범위(-10~10) 밖입니다: {misc[li]}")
         al = np.get("alchemyInfo")
-        if isinstance(al, dict) and "alchemyLevel" in al and not (1 <= _to_int(al["alchemyLevel"], 0) <= 5):
-            errors.append("연단 등급(alchemyLevel)은 1~5 범위여야 합니다.")
+        if isinstance(al, dict) and "alchemyLevel" in al:
+            alv = _to_int(al["alchemyLevel"], 0)
+            if alv < 0:
+                errors.append(f"연단 등급(alchemyLevel)은 0 이상이어야 합니다: {alv}")
+            elif not (1 <= alv <= 5):
+                warnings.append(f"연단 등급(alchemyLevel)이 기본 범위(1~5) 밖입니다: {alv}")
         rf = np.get("refineInfo")
-        if isinstance(rf, dict) and "refineLevel" in rf and not (1 <= _to_int(rf["refineLevel"], 0) <= 5):
-            errors.append("연기 등급(refineLevel)은 1~5 범위여야 합니다.")
+        if isinstance(rf, dict) and "refineLevel" in rf:
+            rfv = _to_int(rf["refineLevel"], 0)
+            if rfv < 0:
+                errors.append(f"연기 등급(refineLevel)은 0 이상이어야 합니다: {rfv}")
+            elif not (1 <= rfv <= 5):
+                warnings.append(f"연기 등급(refineLevel)이 기본 범위(1~5) 밖입니다: {rfv}")
         lgi = np.get("lingGenInfo")
         if isinstance(lgi, dict):
             for k in ("gold", "wood", "water", "fire", "earth"):
-                if k in lgi and not (0 <= _to_int(lgi[k], 0) <= 100):
-                    errors.append(f"영근({k}) 수치는 0~100 범위여야 합니다: {lgi[k]}")
+                if k in lgi:
+                    lv = _to_int(lgi[k], 0)
+                    if lv < 0:
+                        errors.append(f"영근({k}) 수치는 0 이상이어야 합니다: {lv}")
+                    elif lv > 100:
+                        warnings.append(f"영근({k}) 수치가 기본 범위(0~100)를 초과했습니다: {lv}")
 
     bag = files_obj.get("PlayerBagDataInfo.json")
     if isinstance(bag, dict):
@@ -560,16 +576,23 @@ def validate_files(files_obj: dict[str, dict[str, Any]], catalog: dict[str, Any]
             errors.append("가방(Bags)은 배열이어야 합니다.")
         else:
             for idx, entry in enumerate(bags, 1):
-                if not isinstance(entry, dict) or not isinstance(entry.get("item"), dict):
-                    errors.append(f"가방 {idx}번 슬롯에 아이템 정보가 없습니다.")
+                if not isinstance(entry, dict):
+                    errors.append(f"가방 {idx}번 슬롯이 객체가 아닙니다.")
+                    continue
+                if not isinstance(entry.get("item"), dict):
+                    warnings.append(f"가방 {idx}번 슬롯에 아이템 정보가 비어 있습니다.")
                     continue
                 iid = _entry_id(entry["item"])
                 if iid <= 0:
-                    errors.append(f"가방 {idx}번 아이템 ID가 올바르지 않습니다.")
+                    warnings.append(f"가방 {idx}번 아이템 ID가 비정상입니다: {iid}")
                 elif items_map and iid not in items_map:
                     warnings.append(f"가방 {idx}번 아이템 ID {iid}는 카탈로그에 없습니다.")
-                if "num" in entry and _to_int(entry["num"], 0) < 1:
-                    errors.append(f"가방 {idx}번 아이템 수량은 1 이상이어야 합니다.")
+                if "num" in entry:
+                    bnum = _to_int(entry["num"], 0)
+                    if bnum < 0:
+                        errors.append(f"가방 {idx}번 아이템 수량은 0 이상이어야 합니다.")
+                    elif bnum < 1:
+                        warnings.append(f"가방 {idx}번 아이템 수량이 0입니다.")
 
     sk = files_obj.get("PlayerSkillDataInfo.json")
     if isinstance(sk, dict):
@@ -596,7 +619,7 @@ def validate_files(files_obj: dict[str, dict[str, Any]], catalog: dict[str, Any]
                 errors.append(f"특전 ID {tid}의 레벨은 0 이상이어야 합니다.")
             tcat = talents_map.get(tid)
             if tcat and _to_int(tcat.get("maxLevel"), 0) > 0 and lv > _to_int(tcat["maxLevel"], 0):
-                errors.append(f"특전 ID {tid}의 레벨이 최대치를 초과했습니다.")
+                warnings.append(f"특전 ID {tid}의 레벨이 기본 최대치를 초과했습니다.")
 
     return {"valid": len(errors) == 0, "errors": errors, "warnings": warnings}
 

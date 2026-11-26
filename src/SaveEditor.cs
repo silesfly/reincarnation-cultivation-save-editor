@@ -34,7 +34,7 @@ namespace ReincarnationCultivationSaveEditor
                 _currentTargetPath = defaultDir;
             }
 
-            Text = "윤회수선전 세이브 에디터 v1.0.0";
+            Text = "윤회수선전 세이브 에디터 v1.0.1";
             Width = 1220;
             Height = 840;
             MinimumSize = new Size(880, 620);
@@ -132,7 +132,7 @@ namespace ReincarnationCultivationSaveEditor
                 ? Path.Combine(_selfTestOutDir, "wv2-profile")
                 : Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "ReincarnationCultivationSaveEditor", "runtime-1.0.0");
+                    "ReincarnationCultivationSaveEditor", "runtime-1.0.1");
 
             Directory.CreateDirectory(userDataDir);
             CoreWebView2Environment env = await CoreWebView2Environment.CreateAsync(null, userDataDir, null);
@@ -280,7 +280,7 @@ namespace ReincarnationCultivationSaveEditor
             receipt["ok"] = Convert.ToBoolean(probe["validDemo"]) && navBlocked && senderGuardVerified && loaded.Count > 0 && restored.Count == loaded.Count;
             receipt["navigationBlocked"] = navBlocked;
             receipt["senderGuardVerified"] = senderGuardVerified;
-            receipt["version"] = "1.0.0";
+            receipt["version"] = "1.0.1";
             receipt["webView2Version"] = _webView.CoreWebView2.Environment.BrowserVersionString;
             receipt["badgeText"] = probe["badgeText"];
             receipt["badgeState"] = probe["badgeState"];

@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parent
 SRC_DIR = ROOT / "src"
 EDITOR_PAGE = SRC_DIR / "editor-page.html"
 DIST_DIR = ROOT / "dist"
-OUTPUT_NAME = "ReincarnationCultivationSaveEditor-v1.0.0.html"
+OUTPUT_NAME = "ReincarnationCultivationSaveEditor-v1.0.1.html"
 OUTPUT_PATH = DIST_DIR / OUTPUT_NAME
 
 SCRIPT_ORDER = [

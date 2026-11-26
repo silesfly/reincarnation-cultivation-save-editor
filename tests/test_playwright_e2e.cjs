@@ -188,7 +188,7 @@ async function runModeBTest(browser, rootDir) {
 async function main() {
   const { chromium } = loadPlaywright();
   const rootDir = path.resolve(__dirname, '..');
-  const distHtml = path.join(rootDir, 'dist', 'ReincarnationCultivationSaveEditor-v1.0.0.html');
+  const distHtml = path.join(rootDir, 'dist', 'ReincarnationCultivationSaveEditor-v1.0.1.html');
   assert.ok(fs.existsSync(distHtml), '빌드된 HTML이 없습니다: ' + distHtml);
 
   const browser = await chromium.launch({

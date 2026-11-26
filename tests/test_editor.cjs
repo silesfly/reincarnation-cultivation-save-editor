@@ -70,13 +70,20 @@ test('demo bundle inspect and validation rules', () => {
   assert.equal(pv.valid, true);
   assert.ok(pv.warnings.length > 0);
 
-  const badRealm = Codec.cloneJson(demo);
-  badRealm.files['NewPlayerInfo.json'].miscInfo.realmLevel = 9;
-  assert.equal(Core.validateBundle(badRealm, idx).valid, false);
+  const zeroDefaults = Codec.cloneJson(demo);
+  zeroDefaults.files['NewPlayerInfo.json'].miscInfo.realmLevel = 0;
+  zeroDefaults.files['NewPlayerInfo.json'].alchemyInfo.alchemyLevel = 0;
+  zeroDefaults.files['NewPlayerInfo.json'].refineInfo.refineLevel = 0;
+  zeroDefaults.files['NewPlayerInfo.json'].miscInfo.likeability1 = 99;
+  zeroDefaults.files['NewPlayerInfo.json'].lingGenInfo.gold = 120;
+  zeroDefaults.files['PlayerBagDataInfo.json'].Bags.push({ item: null, num: 0 });
+  const zv = Core.validateBundle(zeroDefaults, idx);
+  assert.equal(zv.valid, true, JSON.stringify(zv.errors));
+  assert.ok(zv.warnings.length >= 5);
 
-  const badLike = Codec.cloneJson(demo);
-  badLike.files['NewPlayerInfo.json'].miscInfo.likeability1 = 99;
-  assert.equal(Core.validateBundle(badLike, idx).valid, false);
+  const negRealm = Codec.cloneJson(demo);
+  negRealm.files['NewPlayerInfo.json'].miscInfo.realmLevel = -1;
+  assert.equal(Core.validateBundle(negRealm, idx).valid, false);
 
   const badLingShi = Codec.cloneJson(demo);
   badLingShi.files['NewPlayerInfo.json'].miscInfo.lingShi = -1;
